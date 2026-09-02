@@ -1,7 +1,7 @@
-pub mod geometry;
-pub mod detection;
-pub mod preprocessing;
 pub mod cover;
+pub mod detection;
+pub mod geometry;
+pub mod preprocessing;
 
-pub use geometry::*;
 pub use detection::*;
+pub use geometry::*;

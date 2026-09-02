@@ -63,6 +63,7 @@ impl Default for DetectionState {
 pub struct FrameData {
     pub width: u32,
     pub height: u32,
+    pub stride: u32,
     pub data: Vec<u8>,
     pub format: PixelFormat,
 }
@@ -75,22 +76,51 @@ pub enum PixelFormat {
     Rgba,
 }
 
+impl PixelFormat {
+    pub fn bytes_per_pixel(self) -> u32 {
+        match self {
+            PixelFormat::Bgr | PixelFormat::Rgb => 3,
+            PixelFormat::Bgra | PixelFormat::Rgba => 4,
+        }
+    }
+}
+
 impl FrameData {
     pub fn new_bgr(width: u32, height: u32, data: Vec<u8>) -> Self {
+        let stride = width * 3;
         Self {
             width,
             height,
+            stride,
             data,
             format: PixelFormat::Bgr,
         }
     }
 
     pub fn new_rgb(width: u32, height: u32, data: Vec<u8>) -> Self {
+        let stride = width * 3;
         Self {
             width,
             height,
+            stride,
             data,
             format: PixelFormat::Rgb,
+        }
+    }
+
+    pub fn new_with_stride(
+        width: u32,
+        height: u32,
+        stride: u32,
+        data: Vec<u8>,
+        format: PixelFormat,
+    ) -> Self {
+        Self {
+            width,
+            height,
+            stride,
+            data,
+            format,
         }
     }
 
@@ -98,13 +128,22 @@ impl FrameData {
         if x >= self.width || y >= self.height {
             return None;
         }
-        let idx = ((y * self.width + x) * 3) as usize;
-        if idx + 2 >= self.data.len() {
+        let bpp = self.format.bytes_per_pixel();
+        let row_offset = (y * self.stride + x * bpp) as usize;
+        if row_offset + 2 >= self.data.len() {
             return None;
         }
         match self.format {
-            PixelFormat::Bgr => Some([self.data[idx + 2], self.data[idx + 1], self.data[idx]]),
-            PixelFormat::Rgb => Some([self.data[idx], self.data[idx + 1], self.data[idx + 2]]),
+            PixelFormat::Bgr => Some([
+                self.data[row_offset + 2],
+                self.data[row_offset + 1],
+                self.data[row_offset],
+            ]),
+            PixelFormat::Rgb => Some([
+                self.data[row_offset],
+                self.data[row_offset + 1],
+                self.data[row_offset + 2],
+            ]),
             _ => None,
         }
     }
@@ -116,23 +155,31 @@ impl FrameData {
             return None;
         }
 
-        let mut region_data = Vec::with_capacity((rect.width * rect.height * 3) as usize);
+        let bpp = self.format.bytes_per_pixel();
+        let row_bytes = rect.width * bpp;
+        let mut region_data = Vec::with_capacity((rect.height * row_bytes) as usize);
         for row in y..y + rect.height {
-            let start = ((row * self.width + x) * 3) as usize;
-            let end = start + (rect.width * 3) as usize;
-            region_data.extend_from_slice(&self.data[start..end]);
+            let start = (row * self.stride + x * bpp) as usize;
+            let end = start + row_bytes as usize;
+            if end <= self.data.len() {
+                region_data.extend_from_slice(&self.data[start..end]);
+            }
         }
 
         Some(FrameData {
             width: rect.width,
             height: rect.height,
+            stride: row_bytes,
             data: region_data,
             format: self.format,
         })
     }
 }
 
-pub fn extract_dominant_color(frame: &FrameData, rect: &ScreenRect) -> Option<crate::geometry::ColorRgb> {
+pub fn extract_dominant_color(
+    frame: &FrameData,
+    rect: &ScreenRect,
+) -> Option<crate::geometry::ColorRgb> {
     let region = frame.region(rect)?;
 
     if region.data.is_empty() {

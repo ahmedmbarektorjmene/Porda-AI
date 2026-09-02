@@ -48,17 +48,17 @@ pub fn resize_and_pad(
     (padded, scale, scale)
 }
 
-pub fn nms(
-    boxes: &mut Vec<ScreenRect>,
-    scores: &mut Vec<f32>,
-    threshold: f32,
-) {
+pub fn nms(boxes: &mut Vec<ScreenRect>, scores: &mut Vec<f32>, threshold: f32) {
     if boxes.is_empty() {
         return;
     }
 
     let mut indices: Vec<usize> = (0..boxes.len()).collect();
-    indices.sort_by(|&a, &b| scores[b].partial_cmp(&scores[a]).unwrap_or(std::cmp::Ordering::Equal));
+    indices.sort_by(|&a, &b| {
+        scores[b]
+            .partial_cmp(&scores[a])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     let mut suppressed = vec![false; indices.len()];
 

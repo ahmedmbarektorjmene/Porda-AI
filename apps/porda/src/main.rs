@@ -1,7 +1,7 @@
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{mpsc, Arc, Mutex};
 
 use porda_core::app_state::AppState;
-use porda_core::commands::{UiCommand, CoreEvent};
+use porda_core::commands::{CoreEvent, UiCommand};
 use porda_core::pipeline::Pipeline;
 use porda_platform::tray::TrayAction;
 
@@ -46,10 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ui_handle = std::thread::Builder::new()
         .name("porda-ui".to_string())
         .spawn(move || {
-            let app = porda_ui::PordaApp::new(
-                ui_state_for_ui,
-                cmd_tx_for_ui,
-            );
+            let app = porda_ui::PordaApp::new(ui_state_for_ui, cmd_tx_for_ui);
             if let Err(e) = app.run() {
                 tracing::error!("UI error: {}", e);
             }
@@ -140,22 +137,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         tracing::info!("Terminate requested");
                         break;
                     }
-                    UiCommand::TakeScreenshot => {
-                        match porda_platform::capture_screenshot() {
-                            Some(_frame) => {
-                                let dataset_dir = porda_config::defaults::dataset_dir();
-                                let filename = format!(
-                                    "screenshot_{}.jpg",
-                                    chrono_now()
-                                );
-                                let path = dataset_dir.join(filename);
-                                tracing::info!("Screenshot captured: {:?}", path);
-                            }
-                            None => {
-                                tracing::warn!("Failed to capture screenshot");
-                            }
+                    UiCommand::TakeScreenshot => match porda_platform::capture_screenshot() {
+                        Some(_frame) => {
+                            let dataset_dir = porda_config::defaults::dataset_dir();
+                            let filename = format!("screenshot_{}.jpg", chrono_now());
+                            let path = dataset_dir.join(filename);
+                            tracing::info!("Screenshot captured: {:?}", path);
                         }
-                    }
+                        None => {
+                            tracing::warn!("Failed to capture screenshot");
+                        }
+                    },
                     UiCommand::RefreshHotkeys => {
                         tracing::info!("Hotkeys refreshed");
                     }
@@ -195,11 +187,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         })?;
 
-    pipeline.stop();
-
     ui_handle.join().unwrap_or_else(|e| {
         tracing::error!("UI thread panicked: {:?}", e);
     });
+
+    pipeline.stop();
 
     event_handle.join().unwrap_or_else(|e| {
         tracing::error!("Event handler thread panicked: {:?}", e);

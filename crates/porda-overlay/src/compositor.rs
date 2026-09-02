@@ -10,7 +10,11 @@ pub enum OverlayError {
 }
 
 pub trait OverlayRenderer: Send + Sync {
-    fn update_covers(&mut self, covers: &[CoverRect], frame: &FrameData) -> Result<(), OverlayError>;
+    fn update_covers(
+        &mut self,
+        covers: &[CoverRect],
+        frame: &FrameData,
+    ) -> Result<(), OverlayError>;
     fn clear(&mut self) -> Result<(), OverlayError>;
     fn set_geometry(&mut self, monitors: &[ScreenRect]) -> Result<(), OverlayError>;
 }
@@ -31,7 +35,11 @@ impl CpuOverlayRenderer {
 }
 
 impl OverlayRenderer for CpuOverlayRenderer {
-    fn update_covers(&mut self, covers: &[CoverRect], _frame: &FrameData) -> Result<(), OverlayError> {
+    fn update_covers(
+        &mut self,
+        covers: &[CoverRect],
+        _frame: &FrameData,
+    ) -> Result<(), OverlayError> {
         self.covers = covers.to_vec();
         Ok(())
     }

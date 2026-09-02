@@ -1,4 +1,4 @@
-use crate::detection::{CoverMode, CoverRect, FrameData, extract_dominant_color};
+use crate::detection::{extract_dominant_color, CoverMode, CoverRect, FrameData};
 use crate::geometry::{ColorRgb, ScreenRect};
 
 pub fn generate_cover(

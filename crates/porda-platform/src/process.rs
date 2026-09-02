@@ -11,9 +11,12 @@ pub fn get_foreground_window() -> Option<WindowHandle> {
     {
         windows_impl::get_foreground_window()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     {
-        tracing::warn!("get_foreground_window not supported on this platform");
+        crate::linux::get_foreground_window().map(|w| WindowHandle(w.id as usize))
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    {
         None
     }
 }
@@ -45,7 +48,14 @@ pub fn get_window_process_name(_hwnd: WindowHandle) -> Option<String> {
     {
         windows_impl::get_window_process_name(_hwnd)
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::enumerate_windows()
+            .into_iter()
+            .find(|w| w.id as usize == _hwnd.0)
+            .map(|w| w.app_id)
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         None
     }
@@ -56,7 +66,14 @@ pub fn get_window_title(_hwnd: WindowHandle) -> Option<String> {
     {
         windows_impl::get_window_title(_hwnd)
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::enumerate_windows()
+            .into_iter()
+            .find(|w| w.id as usize == _hwnd.0)
+            .map(|w| w.title)
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         None
     }
@@ -69,7 +86,7 @@ pub fn is_window_visible(_hwnd: WindowHandle) -> bool {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        false
+        true
     }
 }
 
@@ -100,10 +117,30 @@ pub fn capture_screenshot() -> Option<porda_vision::detection::FrameData> {
     {
         windows_impl::capture_screenshot()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::capture_portal_screenshot()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         None
     }
+}
+
+#[cfg(target_os = "linux")]
+pub fn linux_screen_capture() -> Option<(
+    porda_vision::detection::FrameData,
+    porda_vision::geometry::ScreenRect,
+)> {
+    crate::linux::capture_screen_frame()
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn linux_screen_capture() -> Option<(
+    porda_vision::detection::FrameData,
+    porda_vision::geometry::ScreenRect,
+)> {
+    None
 }
 
 pub fn set_window_topmost(_hwnd: WindowHandle) {
@@ -118,6 +155,10 @@ pub fn set_process_realtime_priority() {
     {
         windows_impl::set_process_realtime_priority()
     }
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::set_process_realtime_priority()
+    }
 }
 
 pub fn add_startup_registry() -> Result<(), Box<dyn std::error::Error>> {
@@ -125,9 +166,13 @@ pub fn add_startup_registry() -> Result<(), Box<dyn std::error::Error>> {
     {
         windows_impl::add_startup_registry()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     {
-        Err("Startup registry not supported on this platform".into())
+        crate::linux::add_startup_entry()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    {
+        Err("Startup not supported on this platform".into())
     }
 }
 
@@ -136,9 +181,13 @@ pub fn remove_startup_registry() -> Result<(), Box<dyn std::error::Error>> {
     {
         windows_impl::remove_startup_registry()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     {
-        Err("Startup registry not supported on this platform".into())
+        crate::linux::remove_startup_entry()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    {
+        Err("Startup not supported on this platform".into())
     }
 }
 
@@ -147,7 +196,11 @@ pub fn get_cpu_usage() -> f32 {
     {
         windows_impl::get_cpu_usage()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::get_cpu_usage()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         0.0
     }
@@ -158,9 +211,9 @@ pub fn show_message(title: &str, message: &str) {
     {
         windows_impl::show_message(title, message)
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     {
-        tracing::info!("Message: {} - {}", title, message);
+        crate::linux::show_message(title, message)
     }
 }
 
@@ -195,26 +248,42 @@ pub fn get_monitors() -> Vec<MonitorInfo> {
     {
         windows_impl::get_monitors()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
     {
-        vec![MonitorInfo {
-            bounds: porda_vision::geometry::ScreenRect::new(0, 0, 1920, 1080),
-            work_area: porda_vision::geometry::ScreenRect::new(0, 0, 1920, 1080),
-            is_primary: true,
-        }]
+        crate::linux::get_monitors()
+            .into_iter()
+            .map(|b| MonitorInfo {
+                bounds: b,
+                work_area: b,
+                is_primary: true,
+            })
+            .collect()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+    {
+        vec![]
     }
 }
 
 pub fn list_windows(
-    _include: &[String],
-    _exclude: &[String],
-    _always_skip: &[(String, String)],
-) -> Vec<(WindowHandle, String, String, porda_vision::geometry::ScreenRect)> {
+    include: &[String],
+    exclude: &[String],
+    always_skip: &[(String, String)],
+) -> Vec<(
+    WindowHandle,
+    String,
+    String,
+    porda_vision::geometry::ScreenRect,
+)> {
     #[cfg(target_os = "windows")]
     {
-        windows_impl::list_windows(_include, _exclude, _always_skip)
+        windows_impl::list_windows(include, exclude, always_skip)
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::list_windows(include, exclude, always_skip)
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         vec![]
     }
@@ -225,7 +294,11 @@ pub fn check_duplicate_instances() -> bool {
     {
         windows_impl::check_duplicate_instances()
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux::check_duplicate_instances()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     {
         false
     }
@@ -270,11 +343,14 @@ pub fn model_paths() -> (PathBuf, PathBuf) {
             .unwrap_or_else(|| PathBuf::from("."));
         (
             exe_dir.join("model").join("pordav4x3.cfg"),
-            exe_dir.join("model").join("porda-19200-lr-0005-909.weights"),
+            exe_dir
+                .join("model")
+                .join("porda-19200-lr-0005-909.weights"),
         )
     }
 }
 
+// Windows-specific implementations
 #[cfg(target_os = "windows")]
 mod windows_impl {
     use super::*;
@@ -311,8 +387,8 @@ mod windows_impl {
 
     pub fn get_client_rect(hwnd: WindowHandle) -> Option<ScreenRect> {
         unsafe {
-            use windows::Win32::UI::WindowsAndMessaging::GetClientRect;
             use windows::Win32::Graphics::Gdi::ClientToScreen;
+            use windows::Win32::UI::WindowsAndMessaging::GetClientRect;
             let handle = windows::Win32::Foundation::HWND(hwnd.0 as *mut _);
             let mut rect = windows::Win32::Foundation::RECT::default();
             if GetClientRect(handle, &mut rect).is_ok() {
@@ -332,10 +408,10 @@ mod windows_impl {
 
     pub fn get_window_process_name(hwnd: WindowHandle) -> Option<String> {
         unsafe {
-            use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
+            use windows::Win32::Foundation::CloseHandle;
             use windows::Win32::System::Threading::OpenProcess;
             use windows::Win32::System::Threading::PROCESS_QUERY_LIMITED_INFORMATION;
-            use windows::Win32::Foundation::CloseHandle;
+            use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
 
             let handle = windows::Win32::Foundation::HWND(hwnd.0 as *mut _);
             let mut pid = 0u32;
@@ -406,8 +482,8 @@ mod windows_impl {
 
     pub fn set_process_realtime_priority() {
         unsafe {
-            use windows::Win32::System::Threading::SetPriorityClass;
             use windows::Win32::System::Threading::GetCurrentProcess;
+            use windows::Win32::System::Threading::SetPriorityClass;
             use windows::Win32::System::Threading::REALTIME_PRIORITY_CLASS;
             let handle = GetCurrentProcess();
             let _ = SetPriorityClass(handle, REALTIME_PRIORITY_CLASS);
@@ -426,13 +502,7 @@ mod windows_impl {
                 windows::core::w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run").as_ptr(),
             );
 
-            RegOpenKeyExW(
-                key,
-                reg_path,
-                0,
-                KEY_SET_VALUE,
-                &mut result_key,
-            )?;
+            RegOpenKeyExW(key, reg_path, 0, KEY_SET_VALUE, &mut result_key)?;
 
             let value_wide: Vec<u16> = value.encode_utf16().chain(std::iter::once(0)).collect();
             RegSetValueExW(
@@ -493,23 +563,18 @@ mod windows_impl {
         }
     }
 
-    pub fn set_graphics_preference() {
-    }
+    pub fn set_graphics_preference() {}
 
-    pub fn capture_window(_hwnd: WindowHandle) -> Option<FrameData> {
+    pub fn capture_window(_hwnd: WindowHandle) -> Option<porda_vision::detection::FrameData> {
         None
     }
 
-    pub fn capture_screenshot() -> Option<FrameData> {
+    pub fn capture_screenshot() -> Option<porda_vision::detection::FrameData> {
         None
     }
 
-    pub fn get_monitors() -> Vec<MonitorInfo> {
-        vec![MonitorInfo {
-            bounds: ScreenRect::new(0, 0, 1920, 1080),
-            work_area: ScreenRect::new(0, 0, 1920, 1000),
-            is_primary: true,
-        }]
+    pub fn get_monitors() -> Vec<ScreenRect> {
+        vec![ScreenRect::new(0, 0, 1920, 1080)]
     }
 
     pub fn list_windows(

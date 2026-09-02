@@ -91,13 +91,22 @@ impl Default for WindowConfig {
                 ("explorer.exe".to_string(), "Shell_TrayWnd".to_string()),
                 ("explorer.exe".to_string(), "LauncherTipWnd".to_string()),
                 ("explorer.exe".to_string(), "SystemTray_Main".to_string()),
-                ("explorer.exe".to_string(), "NotifyIconOverflowWindow".to_string()),
-                ("ShellExperienceHost.exe".to_string(), "Shell_TrayWnd".to_string()),
+                (
+                    "explorer.exe".to_string(),
+                    "NotifyIconOverflowWindow".to_string(),
+                ),
+                (
+                    "ShellExperienceHost.exe".to_string(),
+                    "Shell_TrayWnd".to_string(),
+                ),
                 (
                     "ShellExperienceHost.exe".to_string(),
                     "Windows.UI.Core.CoreWindow".to_string(),
                 ),
-                ("SearchApp.exe".to_string(), "Windows.UI.Core.CoreWindow".to_string()),
+                (
+                    "SearchApp.exe".to_string(),
+                    "Windows.UI.Core.CoreWindow".to_string(),
+                ),
             ],
         }
     }
@@ -105,9 +114,7 @@ impl Default for WindowConfig {
 
 impl Default for StartupConfig {
     fn default() -> Self {
-        Self {
-            auto_startup: true,
-        }
+        Self { auto_startup: true }
     }
 }
 

@@ -1,5 +1,5 @@
-use porda_vision::detection::FrameData;
 use porda_vision::detection::Detection;
+use porda_vision::detection::FrameData;
 use porda_vision::geometry::ScreenRect;
 
 #[derive(Debug, thiserror::Error)]

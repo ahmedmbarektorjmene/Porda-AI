@@ -12,10 +12,7 @@ pub struct PordaApp {
 }
 
 impl PordaApp {
-    pub fn new(
-        ui_state: SharedUiState,
-        command_tx: std::sync::mpsc::Sender<UiCommand>,
-    ) -> Self {
+    pub fn new(ui_state: SharedUiState, command_tx: std::sync::mpsc::Sender<UiCommand>) -> Self {
         Self {
             ui_state,
             command_tx,
@@ -25,10 +22,7 @@ impl PordaApp {
     pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
         let app = AppWindow::new()?;
 
-        let handler = UiCommandHandler::new(
-            Arc::clone(&self.ui_state),
-            self.command_tx.clone(),
-        );
+        let handler = UiCommandHandler::new(Arc::clone(&self.ui_state), self.command_tx.clone());
 
         {
             let state = self.ui_state.lock().unwrap();

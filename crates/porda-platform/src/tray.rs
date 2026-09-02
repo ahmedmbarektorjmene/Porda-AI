@@ -20,9 +20,7 @@ impl TrayManager {
     }
 
     pub fn send_action(&self, action: TrayAction) -> Result<(), String> {
-        self.action_tx
-            .send(action)
-            .map_err(|e| e.to_string())
+        self.action_tx.send(action).map_err(|e| e.to_string())
     }
 
     pub fn show_notification(&self, title: &str, message: &str) {

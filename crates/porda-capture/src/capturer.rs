@@ -53,14 +53,12 @@ impl ScreenCapturer for PlatformCapturer {
         exclude: &[String],
         always_skip: &[(String, String)],
     ) -> Result<CapturedFrame, CaptureError> {
-        let hwnd = porda_platform::get_foreground_window()
-            .ok_or(CaptureError::NoForegroundWindow)?;
+        let hwnd =
+            porda_platform::get_foreground_window().ok_or(CaptureError::NoForegroundWindow)?;
 
-        let process_name = porda_platform::get_window_process_name(hwnd)
-            .unwrap_or_default();
+        let process_name = porda_platform::get_window_process_name(hwnd).unwrap_or_default();
 
-        let window_title = porda_platform::get_window_title(hwnd)
-            .unwrap_or_default();
+        let window_title = porda_platform::get_window_title(hwnd).unwrap_or_default();
 
         if should_skip_window(&process_name, &window_title, include, exclude, always_skip) {
             return Err(CaptureError::Failed("Window filtered out".to_string()));
@@ -149,13 +147,29 @@ mod tests {
     fn test_should_skip_window() {
         let include = vec!["chrome.exe".to_string()];
         let exclude = vec!["explorer.exe".to_string()];
-        let always_skip = vec![
-            ("explorer.exe".to_string(), "Shell_TrayWnd".to_string()),
-        ];
+        let always_skip = vec![("explorer.exe".to_string(), "Shell_TrayWnd".to_string())];
 
-        assert!(!should_skip_window("chrome.exe", "Google", &include, &exclude, &always_skip));
-        assert!(should_skip_window("explorer.exe", "Desktop", &include, &exclude, &always_skip));
-        assert!(should_skip_window("firefox.exe", "Firefox", &include, &exclude, &always_skip));
+        assert!(!should_skip_window(
+            "chrome.exe",
+            "Google",
+            &include,
+            &exclude,
+            &always_skip
+        ));
+        assert!(should_skip_window(
+            "explorer.exe",
+            "Desktop",
+            &include,
+            &exclude,
+            &always_skip
+        ));
+        assert!(should_skip_window(
+            "firefox.exe",
+            "Firefox",
+            &include,
+            &exclude,
+            &always_skip
+        ));
         assert!(should_skip_window(
             "explorer.exe",
             "Shell_TrayWnd",
