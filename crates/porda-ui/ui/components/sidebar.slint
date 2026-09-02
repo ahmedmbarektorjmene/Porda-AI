@@ -1,0 +1,311 @@
+import { CheckBox, SpinBox, LineEdit, TextEdit, GroupBox, Palette } from "std-widgets.slint";
+
+export component SidebarButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> active: false;
+    callback clicked;
+
+    height: 40px;
+    background: active ? Palette.accent-background : transparent;
+    border-radius: 6px;
+    width: 100%;
+
+    HorizontalLayout {
+        padding-left: 12px;
+        alignment: start;
+        Text {
+            text: root.label;
+            color: active ? Palette.accent-foreground : Palette.foreground;
+            vertical-alignment: center;
+            font-size: 14px;
+        }
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component BasicPage inherits VerticalLayout {
+    in-out property <bool> is-blur: true;
+    in-out property <bool> is-bg-color: false;
+    in-out property <bool> is-solid-color: false;
+    in-out property <int> accuracy: 25;
+    in-out property <bool> is-detect-male: false;
+    in-out property <bool> is-detect-female: true;
+
+    GroupBox {
+        title: "Cover Mode";
+        VerticalLayout {
+            HorizontalLayout {
+                CheckBox {
+                    text: "Blur";
+                    checked: root.is-blur;
+                    toggled => { root.is-blur = self.checked; root.is-bg-color = false; root.is-solid-color = false; }
+                }
+                CheckBox {
+                    text: "Background Color";
+                    checked: root.is-bg-color;
+                    toggled => { root.is-bg-color = self.checked; root.is-blur = false; root.is-solid-color = false; }
+                }
+                CheckBox {
+                    text: "Solid Color";
+                    checked: root.is-solid-color;
+                    toggled => { root.is-solid-color = self.checked; root.is-blur = false; root.is-bg-color = false; }
+                }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Detection";
+        VerticalLayout {
+            HorizontalLayout {
+                Text { text: "Accuracy (1-99):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.accuracy;
+                    minimum: 1;
+                    maximum: 99;
+                    edited => { root.accuracy = self.value; }
+                }
+            }
+            HorizontalLayout {
+                CheckBox {
+                    text: "Detect Male";
+                    checked: root.is-detect-male;
+                    toggled => { root.is-detect-male = self.checked; }
+                }
+                CheckBox {
+                    text: "Detect Female";
+                    checked: root.is-detect-female;
+                    toggled => { root.is-detect-female = self.checked; }
+                }
+            }
+        }
+    }
+}
+
+export component NetworkSizePage inherits VerticalLayout {
+    in-out property <int> network-width: 544;
+    in-out property <int> network-height: 320;
+
+    GroupBox {
+        title: "Network Dimensions";
+        VerticalLayout {
+            HorizontalLayout {
+                Text { text: "Width (multiple of 32):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.network-width;
+                    minimum: 160;
+                    maximum: 608;
+                    edited => { root.network-width = self.value; }
+                }
+            }
+            HorizontalLayout {
+                Text { text: "Height (multiple of 32):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.network-height;
+                    minimum: 160;
+                    maximum: 480;
+                    edited => { root.network-height = self.value; }
+                }
+            }
+            Text {
+                text: "Recommended: 544 x 320";
+                font-size: 12px;
+                color: Palette.foreground.transparentize(40%);
+            }
+        }
+    }
+}
+
+export component TimeoutPage inherits VerticalLayout {
+    in-out property <int> active-timeout: 65;
+    in-out property <int> sleep-timeout: 500;
+    in-out property <int> keep-running-seconds: 10;
+
+    GroupBox {
+        title: "Detection Timing";
+        VerticalLayout {
+            HorizontalLayout {
+                Text { text: "Active timeout (ms):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.active-timeout;
+                    minimum: 16;
+                    maximum: 1000;
+                    edited => { root.active-timeout = self.value; }
+                }
+            }
+            HorizontalLayout {
+                Text { text: "Sleep timeout (ms):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.sleep-timeout;
+                    minimum: 100;
+                    maximum: 5000;
+                    edited => { root.sleep-timeout = self.value; }
+                }
+            }
+            HorizontalLayout {
+                Text { text: "Keep running (sec):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.keep-running-seconds;
+                    minimum: 1;
+                    maximum: 120;
+                    edited => { root.keep-running-seconds = self.value; }
+                }
+            }
+        }
+    }
+}
+
+export component AdditionalOptionsPage inherits VerticalLayout {
+    in-out property <bool> auto-startup: true;
+    in-out property <bool> is-priority-realtime: false;
+    in-out property <string> toggle-key: "F2";
+    in-out property <string> screenshot-key: "F1";
+
+    GroupBox {
+        title: "Startup";
+        VerticalLayout {
+            CheckBox {
+                text: "Auto-start with Windows";
+                checked: root.auto-startup;
+                toggled => { root.auto-startup = self.checked; }
+            }
+            CheckBox {
+                text: "Real-time process priority";
+                checked: root.is-priority-realtime;
+                toggled => { root.is-priority-realtime = self.checked; }
+            }
+        }
+    }
+
+    GroupBox {
+        title: "Hotkeys";
+        VerticalLayout {
+            HorizontalLayout {
+                Text { text: "Toggle key:"; vertical-alignment: center; }
+                LineEdit {
+                    text: root.toggle-key;
+                    edited => { root.toggle-key = self.text; }
+                }
+            }
+            HorizontalLayout {
+                Text { text: "Screenshot key:"; vertical-alignment: center; }
+                LineEdit {
+                    text: root.screenshot-key;
+                    edited => { root.screenshot-key = self.text; }
+                }
+            }
+        }
+    }
+}
+
+export component InExAppPage inherits VerticalLayout {
+    in-out property <bool> is-all-windows: false;
+    in-out property <bool> is-include-window: true;
+    in-out property <bool> is-exclude-window: false;
+    in-out property <string> include-windows: "chrome.exe, msedge.exe";
+    in-out property <string> exclude-windows: "explorer.exe, cmd.exe";
+
+    GroupBox {
+        title: "Window Filtering";
+        VerticalLayout {
+            HorizontalLayout {
+                CheckBox {
+                    text: "All Windows";
+                    checked: root.is-all-windows;
+                    toggled => { root.is-all-windows = self.checked; }
+                }
+                CheckBox {
+                    text: "Include Mode";
+                    checked: root.is-include-window;
+                    toggled => { root.is-include-window = self.checked; root.is-exclude-window = !self.checked; }
+                }
+                CheckBox {
+                    text: "Exclude Mode";
+                    checked: root.is-exclude-window;
+                    toggled => { root.is-exclude-window = self.checked; root.is-include-window = !self.checked; }
+                }
+            }
+        }
+    }
+
+    if root.is-include-window: GroupBox {
+        title: "Included Windows (comma-separated)";
+        TextEdit {
+            text: root.include-windows;
+            edited => { root.include-windows = self.text; }
+        }
+    }
+
+    if root.is-exclude-window: GroupBox {
+        title: "Excluded Windows (comma-separated)";
+        TextEdit {
+            text: root.exclude-windows;
+            edited => { root.exclude-windows = self.text; }
+        }
+    }
+}
+
+export component TrackingPage inherits VerticalLayout {
+    GroupBox {
+        title: "Analytics";
+        Text {
+            text: "Tracking configuration will be available in the next update.";
+            color: Palette.foreground.transparentize(40%);
+        }
+    }
+}
+
+export component ScalingPage inherits VerticalLayout {
+    in-out property <bool> is-allow-max-cpu-limit: false;
+    in-out property <int> max-cpu-limit: 90;
+
+    GroupBox {
+        title: "CPU Management";
+        VerticalLayout {
+            CheckBox {
+                text: "Enable CPU limit";
+                checked: root.is-allow-max-cpu-limit;
+                toggled => { root.is-allow-max-cpu-limit = self.checked; }
+            }
+            if root.is-allow-max-cpu-limit: HorizontalLayout {
+                Text { text: "Max CPU (%):"; vertical-alignment: center; }
+                SpinBox {
+                    value: root.max-cpu-limit;
+                    minimum: 10;
+                    maximum: 100;
+                    edited => { root.max-cpu-limit = self.value; }
+                }
+            }
+        }
+    }
+}
+
+export component AboutPage inherits VerticalLayout {
+    GroupBox {
+        title: "About Porda AI";
+        VerticalLayout {
+            Text {
+                text: "Porda AI v3.0.0";
+                font-size: 18px;
+                font-weight: 700;
+            }
+            Text {
+                text: "Real-time desktop privacy overlay powered by AI object detection.";
+                wrap: word-wrap;
+            }
+            Text {
+                text: "Developed by Abdullah";
+                color: Palette.foreground.transparentize(40%);
+            }
+            Text {
+                text: "Rewritten in Rust with Slint GUI";
+                color: Palette.foreground.transparentize(40%);
+            }
+        }
+    }
+}

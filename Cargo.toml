@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/porda-core",
+    "crates/porda-config",
+    "crates/porda-capture",
+    "crates/porda-inference",
+    "crates/porda-vision",
+    "crates/porda-overlay",
+    "crates/porda-platform",
+    "crates/porda-ui",
+    "crates/porda-tray",
+    "apps/porda",
+]
+
+[workspace.package]
+version = "3.0.0"
+edition = "2021"
+license = "AGPL-3.0"
+authors = ["Porda AI"]
+
+[workspace.dependencies]
+porda-core = { path = "crates/porda-core" }
+porda-config = { path = "crates/porda-config" }
+porda-capture = { path = "crates/porda-capture" }
+porda-inference = { path = "crates/porda-inference" }
+porda-vision = { path = "crates/porda-vision" }
+porda-overlay = { path = "crates/porda-overlay" }
+porda-platform = { path = "crates/porda-platform" }
+porda-ui = { path = "crates/porda-ui" }
+porda-tray = { path = "crates/porda-tray" }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }

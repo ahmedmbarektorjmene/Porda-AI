@@ -1,0 +1,10 @@
+[package]
+name = "porda-inference"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+porda-vision = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }

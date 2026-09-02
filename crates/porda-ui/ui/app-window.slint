@@ -1,0 +1,212 @@
+import { Button, HorizontalBox, CheckBox, SpinBox, LineEdit, TextEdit, GroupBox, Palette } from "std-widgets.slint";
+
+import { SidebarButton, BasicPage, NetworkSizePage, TimeoutPage, AdditionalOptionsPage, InExAppPage, TrackingPage, ScalingPage, AboutPage } from "components/sidebar.slint";
+
+component SettingsSidebar inherits VerticalLayout {
+    in property <int> current-page: 0;
+    callback navigate(int);
+
+    padding: 8px;
+    spacing: 4px;
+
+    SidebarButton { label: "Basic"; active: current-page == 0; clicked => { root.navigate(0); } }
+    SidebarButton { label: "Network Size"; active: current-page == 1; clicked => { root.navigate(1); } }
+    SidebarButton { label: "Timeout"; active: current-page == 2; clicked => { root.navigate(2); } }
+    SidebarButton { label: "Additional Options"; active: current-page == 3; clicked => { root.navigate(3); } }
+    SidebarButton { label: "In/Ex App"; active: current-page == 4; clicked => { root.navigate(4); } }
+    SidebarButton { label: "Tracking"; active: current-page == 5; clicked => { root.navigate(5); } }
+    SidebarButton { label: "Scaling"; active: current-page == 6; clicked => { root.navigate(6); } }
+    SidebarButton { label: "About/Report"; active: current-page == 7; clicked => { root.navigate(7); } }
+}
+
+export component AppWindow inherits Window {
+    title: "Porda AI Settings";
+    preferred-width: 800px;
+    preferred-height: 600px;
+
+    in property <bool> is-active: false;
+    in-out property <bool> is-blur: true;
+    in-out property <bool> is-bg-color: false;
+    in-out property <bool> is-solid-color: false;
+    in-out property <int> accuracy: 25;
+    in-out property <int> network-width: 544;
+    in-out property <int> network-height: 320;
+    in-out property <int> active-timeout: 65;
+    in-out property <int> sleep-timeout: 500;
+    in-out property <int> keep-running-seconds: 10;
+    in-out property <string> engine: "CPU Engine";
+    in-out property <bool> is-detect-male: false;
+    in-out property <bool> is-detect-female: true;
+    in-out property <bool> is-all-windows: false;
+    in-out property <bool> is-include-window: true;
+    in-out property <bool> is-exclude-window: false;
+    in-out property <string> include-windows: "";
+    in-out property <string> exclude-windows: "";
+    in-out property <bool> auto-startup: true;
+    in-out property <bool> is-priority-realtime: false;
+    in-out property <bool> is-allow-max-cpu-limit: false;
+    in-out property <int> max-cpu-limit: 90;
+    in-out property <string> toggle-key: "F2";
+    in-out property <string> screenshot-key: "F1";
+    in property <float> cpu-usage: 0.0;
+    in property <string> detection-state: "Sleep";
+    in-out property <int> current-page: 0;
+
+    callback activate();
+    callback deactivate();
+    callback toggle-activation();
+    callback save();
+    callback ok_and_close();
+    callback apply();
+    callback restore-defaults();
+    callback take-screenshot();
+    callback refresh-hotkeys();
+    callback terminate();
+    callback navigate(int);
+
+    HorizontalBox {
+        padding: 8px;
+        spacing: 8px;
+
+        Rectangle {
+            width: 200px;
+            background: Palette.alternate-background;
+            border-radius: 8px;
+
+            VerticalLayout {
+                padding: 12px;
+                spacing: 8px;
+
+                Text {
+                    text: "Porda AI";
+                    font-size: 20px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                }
+
+                Text {
+                    text: root.is-active ? "Active" : "Inactive";
+                    color: root.is-active ? #22c55e : #94a3b8;
+                    font-size: 13px;
+                    horizontal-alignment: center;
+                }
+
+                SettingsSidebar {
+                    current-page: root.current-page;
+                    navigate(page) => { root.current-page = page; root.navigate(page); }
+                }
+            }
+        }
+
+        VerticalLayout {
+            spacing: 8px;
+
+            Rectangle {
+                vertical-stretch: 1;
+                background: Palette.alternate-background;
+                border-radius: 8px;
+                padding: 16px;
+
+                if root.current-page == 0: BasicPage {
+                    is-blur: root.is-blur;
+                    is-bg-color: root.is-bg-color;
+                    is-solid-color: root.is-solid-color;
+                    accuracy: root.accuracy;
+                    is-detect-male: root.is-detect-male;
+                    is-detect-female: root.is-detect-female;
+                }
+
+                if root.current-page == 1: NetworkSizePage {
+                    network-width: root.network-width;
+                    network-height: root.network-height;
+                }
+
+                if root.current-page == 2: TimeoutPage {
+                    active-timeout: root.active-timeout;
+                    sleep-timeout: root.sleep-timeout;
+                    keep-running-seconds: root.keep-running-seconds;
+                }
+
+                if root.current-page == 3: AdditionalOptionsPage {
+                    auto-startup: root.auto-startup;
+                    is-priority-realtime: root.is-priority-realtime;
+                    toggle-key: root.toggle-key;
+                    screenshot-key: root.screenshot-key;
+                }
+
+                if root.current-page == 4: InExAppPage {
+                    is-all-windows: root.is-all-windows;
+                    is-include-window: root.is-include-window;
+                    is-exclude-window: root.is-exclude-window;
+                    include-windows: root.include-windows;
+                    exclude-windows: root.exclude-windows;
+                }
+
+                if root.current-page == 5: TrackingPage {}
+
+                if root.current-page == 6: ScalingPage {
+                    is-allow-max-cpu-limit: root.is-allow-max-cpu-limit;
+                    max-cpu-limit: root.max-cpu-limit;
+                }
+
+                if root.current-page == 7: AboutPage {}
+            }
+
+            Rectangle {
+                height: 80px;
+                background: Palette.alternate-background;
+                border-radius: 8px;
+                padding: 8px;
+
+                VerticalLayout {
+                    spacing: 6px;
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+
+                        Button {
+                            text: "Save";
+                            primary: true;
+                            clicked => { root.save(); }
+                        }
+                        Button {
+                            text: "Default";
+                            clicked => { root.restore-defaults(); }
+                        }
+                        Button {
+                            text: "OK";
+                            clicked => { root.ok_and_close(); }
+                        }
+                        Button {
+                            text: "Apply";
+                            clicked => { root.apply(); }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+
+                        Button {
+                            text: "Terminate";
+                            clicked => { root.terminate(); }
+                        }
+                        Button {
+                            text: root.is-active ? "Deactivate" : "Activate";
+                            clicked => { root.toggle-activation(); }
+                        }
+                        Button {
+                            text: "Screenshot";
+                            clicked => { root.take-screenshot(); }
+                        }
+                        Button {
+                            text: "Refresh Hotkeys";
+                            clicked => { root.refresh-hotkeys(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

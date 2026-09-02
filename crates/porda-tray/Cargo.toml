@@ -1,0 +1,12 @@
+[package]
+name = "porda-tray"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+porda-core = { workspace = true }
+porda-config = { workspace = true }
+porda-platform = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }

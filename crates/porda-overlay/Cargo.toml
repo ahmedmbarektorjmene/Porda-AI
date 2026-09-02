@@ -1,0 +1,9 @@
+[package]
+name = "porda-overlay"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+porda-vision = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

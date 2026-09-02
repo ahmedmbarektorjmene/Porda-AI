@@ -213,13 +213,28 @@ If you've found value in this project, your support can contribute to its presen
 ## How to run the project?
 
 -   git clone https://github.com/hijam-git/Porda-AI
--   cd porda-ai
--   create new env
--   first Install dependencies: pip install -r requirements.txt
--   to Run the application: python main.py
+-   cd Porda-AI/porda-rs
+-   cargo check     # verify compilation
+-   cargo build     # build the application
 
--   For building application:
-    pyinstaller --onefile --noconsole --add-data "model/pordav4x3.cfg;model/" --add-data "model/porda-19200-lr-0005-909.weights;model/" --add-data "startup_image/1.png;startup_image/" --add-data "static/pordaailogo.png;static/" --add-data "static/pordaailogo.ico;static/" --icon=static/pordaailogo.ico --name PordaAi(version) main.py
+## Architecture
+
+The application is organized as a Cargo workspace:
+
+```
+porda-rs/
+├── crates/
+│   ├── porda-config/      # Typed configuration
+│   ├── porda-vision/      # Geometry, detection, preprocessing
+│   ├── porda-core/        # Application state, pipeline
+│   ├── porda-capture/     # Screen capture abstraction
+│   ├── porda-inference/   # Detector abstraction
+│   ├── porda-overlay/     # Overlay renderer
+│   ├── porda-platform/    # Windows/Linux platform APIs
+│   ├── porda-ui/          # Slint settings GUI
+│   └── porda-tray/        # System tray
+└── apps/porda/            # Main binary
+```
 
 ## Important Info
 

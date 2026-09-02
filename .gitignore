@@ -11,6 +11,5 @@ others
 remember.txt
 install_command.txt
 .env
-
-
-
+target
+Cargo.lock

@@ -1,0 +1,22 @@
+[package]
+name = "porda"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "porda"
+path = "src/main.rs"
+
+[dependencies]
+porda-core = { workspace = true }
+porda-config = { workspace = true }
+porda-capture = { workspace = true }
+porda-inference = { workspace = true }
+porda-vision = { workspace = true }
+porda-overlay = { workspace = true }
+porda-platform = { workspace = true }
+porda-ui = { workspace = true }
+porda-tray = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
