@@ -5,19 +5,19 @@ export component SidebarButton inherits Rectangle {
     in property <bool> active: false;
     callback clicked;
 
-    height: 40px;
+    height: 32px; // Reduced height
     background: active ? Palette.accent-background : transparent;
-    border-radius: 6px;
+    border-radius: 4px;
     width: 100%;
 
     HorizontalLayout {
-        padding-left: 12px;
+        padding-left: 10px;
         alignment: start;
         Text {
             text: root.label;
             color: active ? Palette.accent-foreground : Palette.foreground;
             vertical-alignment: center;
-            font-size: 14px;
+            font-size: 13px;
         }
     }
 
@@ -36,25 +36,28 @@ export component BasicPage inherits VerticalLayout {
     in-out property <bool> is-detect-male: false;
     in-out property <bool> is-detect-female: true;
 
+    spacing: 12px; // Tightened vertical layout gaps
+    alignment: start; // Prevents page elements from stretching vertically
+
     GroupBox {
         title: "Cover Mode";
-        VerticalLayout {
-            HorizontalLayout {
-                CheckBox {
-                    text: "Blur";
-                    checked: root.is-blur;
-                    toggled => { root.is-blur = self.checked; root.is-bg-color = false; root.is-solid-color = false; }
-                }
-                CheckBox {
-                    text: "Background Color";
-                    checked: root.is-bg-color;
-                    toggled => { root.is-bg-color = self.checked; root.is-blur = false; root.is-solid-color = false; }
-                }
-                CheckBox {
-                    text: "Solid Color";
-                    checked: root.is-solid-color;
-                    toggled => { root.is-solid-color = self.checked; root.is-blur = false; root.is-bg-color = false; }
-                }
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: start;
+            CheckBox {
+                text: "Blur";
+                checked: root.is-blur;
+                toggled => { root.is-blur = self.checked; root.is-bg-color = false; root.is-solid-color = false; }
+            }
+            CheckBox {
+                text: "Background Color";
+                checked: root.is-bg-color;
+                toggled => { root.is-bg-color = self.checked; root.is-blur = false; root.is-solid-color = false; }
+            }
+            CheckBox {
+                text: "Solid Color";
+                checked: root.is-solid-color;
+                toggled => { root.is-solid-color = self.checked; root.is-blur = false; root.is-bg-color = false; }
             }
         }
     }
@@ -62,9 +65,13 @@ export component BasicPage inherits VerticalLayout {
     GroupBox {
         title: "Detection";
         VerticalLayout {
+            spacing: 10px;
             HorizontalLayout {
-                Text { text: "Accuracy (1-99):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Accuracy (1-99):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 110px; // Capped width stops "thick" textboxes
                     value: root.accuracy;
                     minimum: 1;
                     maximum: 99;
@@ -72,6 +79,8 @@ export component BasicPage inherits VerticalLayout {
                 }
             }
             HorizontalLayout {
+                spacing: 16px;
+                alignment: start;
                 CheckBox {
                     text: "Detect Male";
                     checked: root.is-detect-male;
@@ -91,12 +100,19 @@ export component NetworkSizePage inherits VerticalLayout {
     in-out property <int> network-width: 544;
     in-out property <int> network-height: 320;
 
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "Network Dimensions";
         VerticalLayout {
+            spacing: 10px;
             HorizontalLayout {
-                Text { text: "Width (multiple of 32):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Width (multiple of 32):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 120px;
                     value: root.network-width;
                     minimum: 160;
                     maximum: 608;
@@ -104,8 +120,11 @@ export component NetworkSizePage inherits VerticalLayout {
                 }
             }
             HorizontalLayout {
-                Text { text: "Height (multiple of 32):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Height (multiple of 32):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 120px;
                     value: root.network-height;
                     minimum: 160;
                     maximum: 480;
@@ -114,7 +133,7 @@ export component NetworkSizePage inherits VerticalLayout {
             }
             Text {
                 text: "Recommended: 544 x 320";
-                font-size: 12px;
+                font-size: 11px;
                 color: Palette.foreground.transparentize(40%);
             }
         }
@@ -126,12 +145,19 @@ export component TimeoutPage inherits VerticalLayout {
     in-out property <int> sleep-timeout: 500;
     in-out property <int> keep-running-seconds: 10;
 
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "Detection Timing";
         VerticalLayout {
+            spacing: 10px;
             HorizontalLayout {
-                Text { text: "Active timeout (ms):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Active timeout (ms):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 120px;
                     value: root.active-timeout;
                     minimum: 16;
                     maximum: 1000;
@@ -139,8 +165,11 @@ export component TimeoutPage inherits VerticalLayout {
                 }
             }
             HorizontalLayout {
-                Text { text: "Sleep timeout (ms):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Sleep timeout (ms):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 120px;
                     value: root.sleep-timeout;
                     minimum: 100;
                     maximum: 5000;
@@ -148,8 +177,11 @@ export component TimeoutPage inherits VerticalLayout {
                 }
             }
             HorizontalLayout {
-                Text { text: "Keep running (sec):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Keep running (sec):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 120px;
                     value: root.keep-running-seconds;
                     minimum: 1;
                     maximum: 120;
@@ -166,9 +198,13 @@ export component AdditionalOptionsPage inherits VerticalLayout {
     in-out property <string> toggle-key: "F2";
     in-out property <string> screenshot-key: "F1";
 
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "Startup";
         VerticalLayout {
+            spacing: 8px;
             CheckBox {
                 text: "Auto-start with Windows";
                 checked: root.auto-startup;
@@ -185,16 +221,23 @@ export component AdditionalOptionsPage inherits VerticalLayout {
     GroupBox {
         title: "Hotkeys";
         VerticalLayout {
+            spacing: 10px;
             HorizontalLayout {
-                Text { text: "Toggle key:"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Toggle key:"; vertical-alignment: center; font-size: 13px; }
                 LineEdit {
+                    width: 100px;
                     text: root.toggle-key;
                     edited => { root.toggle-key = self.text; }
                 }
             }
             HorizontalLayout {
-                Text { text: "Screenshot key:"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Screenshot key:"; vertical-alignment: center; font-size: 13px; }
                 LineEdit {
+                    width: 100px;
                     text: root.screenshot-key;
                     edited => { root.screenshot-key = self.text; }
                 }
@@ -210,25 +253,28 @@ export component InExAppPage inherits VerticalLayout {
     in-out property <string> include-windows: "chrome.exe, msedge.exe";
     in-out property <string> exclude-windows: "explorer.exe, cmd.exe";
 
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "Window Filtering";
-        VerticalLayout {
-            HorizontalLayout {
-                CheckBox {
-                    text: "All Windows";
-                    checked: root.is-all-windows;
-                    toggled => { root.is-all-windows = self.checked; }
-                }
-                CheckBox {
-                    text: "Include Mode";
-                    checked: root.is-include-window;
-                    toggled => { root.is-include-window = self.checked; root.is-exclude-window = !self.checked; }
-                }
-                CheckBox {
-                    text: "Exclude Mode";
-                    checked: root.is-exclude-window;
-                    toggled => { root.is-exclude-window = self.checked; root.is-include-window = !self.checked; }
-                }
+        HorizontalLayout {
+            spacing: 16px;
+            alignment: start;
+            CheckBox {
+                text: "All Windows";
+                checked: root.is-all-windows;
+                toggled => { root.is-all-windows = self.checked; }
+            }
+            CheckBox {
+                text: "Include Mode";
+                checked: root.is-include-window;
+                toggled => { root.is-include-window = self.checked; root.is-exclude-window = !self.checked; }
+            }
+            CheckBox {
+                text: "Exclude Mode";
+                checked: root.is-exclude-window;
+                toggled => { root.is-exclude-window = self.checked; root.is-include-window = !self.checked; }
             }
         }
     }
@@ -236,6 +282,7 @@ export component InExAppPage inherits VerticalLayout {
     if root.is-include-window: GroupBox {
         title: "Included Windows (comma-separated)";
         TextEdit {
+            height: 70px; // Capped text area size
             text: root.include-windows;
             edited => { root.include-windows = self.text; }
         }
@@ -244,6 +291,7 @@ export component InExAppPage inherits VerticalLayout {
     if root.is-exclude-window: GroupBox {
         title: "Excluded Windows (comma-separated)";
         TextEdit {
+            height: 70px;
             text: root.exclude-windows;
             edited => { root.exclude-windows = self.text; }
         }
@@ -251,10 +299,14 @@ export component InExAppPage inherits VerticalLayout {
 }
 
 export component TrackingPage inherits VerticalLayout {
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "Analytics";
         Text {
             text: "Tracking configuration will be available in the next update.";
+            font-size: 13px;
             color: Palette.foreground.transparentize(40%);
         }
     }
@@ -264,17 +316,24 @@ export component ScalingPage inherits VerticalLayout {
     in-out property <bool> is-allow-max-cpu-limit: false;
     in-out property <int> max-cpu-limit: 90;
 
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "CPU Management";
         VerticalLayout {
+            spacing: 10px;
             CheckBox {
                 text: "Enable CPU limit";
                 checked: root.is-allow-max-cpu-limit;
                 toggled => { root.is-allow-max-cpu-limit = self.checked; }
             }
             if root.is-allow-max-cpu-limit: HorizontalLayout {
-                Text { text: "Max CPU (%):"; vertical-alignment: center; }
+                spacing: 12px;
+                alignment: start;
+                Text { text: "Max CPU (%):"; vertical-alignment: center; font-size: 13px; }
                 SpinBox {
+                    width: 100px;
                     value: root.max-cpu-limit;
                     minimum: 10;
                     maximum: 100;
@@ -286,24 +345,31 @@ export component ScalingPage inherits VerticalLayout {
 }
 
 export component AboutPage inherits VerticalLayout {
+    spacing: 12px;
+    alignment: start;
+
     GroupBox {
         title: "About Porda AI";
         VerticalLayout {
+            spacing: 6px;
             Text {
                 text: "Porda AI v3.0.0";
-                font-size: 18px;
+                font-size: 16px;
                 font-weight: 700;
             }
             Text {
                 text: "Real-time desktop privacy overlay powered by AI object detection.";
+                font-size: 13px;
                 wrap: word-wrap;
             }
             Text {
                 text: "Developed by Abdullah";
+                font-size: 12px;
                 color: Palette.foreground.transparentize(40%);
             }
             Text {
                 text: "Rewritten in Rust with Slint GUI";
+                font-size: 12px;
                 color: Palette.foreground.transparentize(40%);
             }
         }

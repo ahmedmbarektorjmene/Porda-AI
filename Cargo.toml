@@ -10,7 +10,7 @@ members = [
     "crates/porda-platform",
     "crates/porda-ui",
     "crates/porda-tray",
-    "apps/porda",
+    "porda",
 ]
 
 [workspace.package]

@@ -7,9 +7,29 @@ pub enum OverlayError {
     CreationFailed(String),
     #[error("Rendering failed: {0}")]
     RenderFailed(String),
+    #[error("Unsupported: {0}")]
+    Unsupported(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OverlayCapability {
+    Supported,
+    Unsupported(String),
+}
+
+impl OverlayCapability {
+    pub fn is_supported(&self) -> bool {
+        matches!(self, Self::Supported)
+    }
 }
 
 pub trait OverlayRenderer: Send + Sync {
+    fn capability(&self) -> OverlayCapability {
+        OverlayCapability::Supported
+    }
+    fn initialize(&mut self, monitors: &[ScreenRect]) -> Result<(), OverlayError> {
+        self.set_geometry(monitors)
+    }
     fn update_covers(
         &mut self,
         covers: &[CoverRect],
@@ -17,6 +37,9 @@ pub trait OverlayRenderer: Send + Sync {
     ) -> Result<(), OverlayError>;
     fn clear(&mut self) -> Result<(), OverlayError>;
     fn set_geometry(&mut self, monitors: &[ScreenRect]) -> Result<(), OverlayError>;
+    fn shutdown(&mut self) -> Result<(), OverlayError> {
+        self.clear()
+    }
 }
 
 pub struct CpuOverlayRenderer {

@@ -8,3 +8,12 @@ porda-vision = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
+
+[features]
+opencv = ["dep:opencv"]
+
+[dependencies.opencv]
+version = "0.100"
+default-features = false
+features = ["dnn", "imgproc", "imgcodecs", "clang-runtime"]
+optional = true

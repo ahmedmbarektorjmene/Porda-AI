@@ -335,19 +335,36 @@ pub fn model_paths() -> (PathBuf, PathBuf) {
         .collect();
 
     if cfg_files.len() == 1 && weights_files.len() == 1 {
-        (cfg_files[0].path(), weights_files[0].path())
-    } else {
-        let exe_dir = std::env::current_exe()
-            .ok()
-            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-            .unwrap_or_else(|| PathBuf::from("."));
-        (
-            exe_dir.join("model").join("pordav4x3.cfg"),
-            exe_dir
-                .join("model")
-                .join("porda-19200-lr-0005-909.weights"),
-        )
+        return (cfg_files[0].path(), weights_files[0].path());
     }
+
+    // Fallback: check Python reference model location (for dev / audit)
+    let python_model_dir = PathBuf::from("/home/torchi/Desktop/Porda-AI/Porda-AI/model");
+    let py_cfg = python_model_dir.join("pordav4x3.cfg");
+    let py_weights = python_model_dir.join("porda-19200-lr-0005-909.weights");
+    if py_cfg.exists() && py_weights.exists() {
+        tracing::info!("Using Python reference model at {:?}", python_model_dir);
+        return (py_cfg, py_weights);
+    }
+
+    // Fallback: workspace-relative model dir
+    let workspace_model = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../Porda-AI/model");
+    let ws_cfg = workspace_model.join("pordav4x3.cfg");
+    let ws_weights = workspace_model.join("porda-19200-lr-0005-909.weights");
+    if ws_cfg.exists() && ws_weights.exists() {
+        return (ws_cfg, ws_weights);
+    }
+
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."));
+    (
+        exe_dir.join("model").join("pordav4x3.cfg"),
+        exe_dir
+            .join("model")
+            .join("porda-19200-lr-0005-909.weights"),
+    )
 }
 
 // Windows-specific implementations

@@ -230,6 +230,7 @@ pub fn extract_dominant_color(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::geometry::ColorRgb;
 
     #[test]
     fn test_object_class() {

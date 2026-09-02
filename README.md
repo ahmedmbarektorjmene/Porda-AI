@@ -233,7 +233,7 @@ porda-rs/
 │   ├── porda-platform/    # Windows/Linux platform APIs
 │   ├── porda-ui/          # Slint settings GUI
 │   └── porda-tray/        # System tray
-└── apps/porda/            # Main binary
+└── porda/            # Main binary
 ```
 
 ## Important Info
@@ -255,19 +255,18 @@ There are many ways you can contribute:
 -   💸 Donate to support development
 -   🎓 Create tutorials to encourage your community and youth
 -   📝 Improve or write proper documentation
--   💬 Add meaningful comments to the code
--   ✨ Add new features (e.g., prayer times, etc.)
--   🌍 Contribute translations and add more languages
--   🐧 Build and test for Linux
--   🚀 Leverage Nvidia GPU support for better performance
+-   🐧 testing for Linux
 -   🎨 Improve the UI/UX design
+-   🚀 Leverage Nvidia/AMD/Intel GPU support for better performance
+-   ⚡ Optimize for speed and efficiency and avoiding unecessairy allocations
+-   🌍 Contribute translations and add more languages
 -   🐛 Fix bugs
 -   🔐 Improve security
+-   💬 Add meaningful comments to the code
 -   🧹 Clean up and refactor the code
 -   📚 Follow best coding practices
--   ⚡ Optimize for speed and efficiency
 -   🤖 Improve or replace the AI model (e.g., TFLite, YOLO, MobileNet)
--   Converting with C++
+
 
 …and much more!
 

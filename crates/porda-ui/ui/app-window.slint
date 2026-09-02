@@ -1,4 +1,4 @@
-import { Button, HorizontalBox, CheckBox, SpinBox, LineEdit, TextEdit, GroupBox, Palette } from "std-widgets.slint";
+import { Button, CheckBox, SpinBox, LineEdit, TextEdit, GroupBox, Palette } from "std-widgets.slint";
 
 import { SidebarButton, BasicPage, NetworkSizePage, TimeoutPage, AdditionalOptionsPage, InExAppPage, TrackingPage, ScalingPage, AboutPage } from "components/sidebar.slint";
 
@@ -6,8 +6,9 @@ component SettingsSidebar inherits VerticalLayout {
     in property <int> current-page: 0;
     callback navigate(int);
 
-    padding: 8px;
-    spacing: 4px;
+    padding: 4px;
+    spacing: 2px;
+    alignment: start;
 
     SidebarButton { label: "Basic"; active: current-page == 0; clicked => { root.navigate(0); } }
     SidebarButton { label: "Network Size"; active: current-page == 1; clicked => { root.navigate(1); } }
@@ -21,8 +22,8 @@ component SettingsSidebar inherits VerticalLayout {
 
 export component AppWindow inherits Window {
     title: "Porda AI Settings";
-    preferred-width: 800px;
-    preferred-height: 600px;
+    preferred-width: 820px;
+    preferred-height: 540px;
 
     in property <bool> is-active: false;
     in-out property <bool> is-blur: true;
@@ -64,32 +65,40 @@ export component AppWindow inherits Window {
     callback terminate();
     callback navigate(int);
 
-    HorizontalBox {
+    HorizontalLayout {
         padding: 8px;
         spacing: 8px;
 
+        // --- LEFT SIDEBAR PANEL ---
         Rectangle {
-            width: 200px;
+            width: 180px;
             background: Palette.alternate-background;
-            border-radius: 8px;
+            border-radius: 6px;
 
             VerticalLayout {
-                padding: 12px;
+                padding: 10px;
                 spacing: 8px;
+                alignment: start;
 
-                Text {
-                    text: "Porda AI";
-                    font-size: 20px;
-                    font-weight: 700;
-                    horizontal-alignment: center;
+                // Header Block
+                VerticalLayout {
+                    spacing: 2px;
+                    Text {
+                        text: "Porda AI";
+                        font-size: 16px;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                    }
+
+                    Text {
+                        text: root.is-active ? "● Active" : "○ Inactive";
+                        color: root.is-active ? #22c55e : #94a3b8;
+                        font-size: 12px;
+                        horizontal-alignment: center;
+                    }
                 }
 
-                Text {
-                    text: root.is-active ? "Active" : "Inactive";
-                    color: root.is-active ? #22c55e : #94a3b8;
-                    font-size: 13px;
-                    horizontal-alignment: center;
-                }
+                Rectangle { height: 1px; background: Palette.border; } // Subtle divider
 
                 SettingsSidebar {
                     current-page: root.current-page;
@@ -98,112 +107,98 @@ export component AppWindow inherits Window {
             }
         }
 
+        // --- RIGHT MAIN CONTENT PANEL ---
         VerticalLayout {
             spacing: 8px;
 
+            // Content Area
             Rectangle {
                 vertical-stretch: 1;
                 background: Palette.alternate-background;
-                border-radius: 8px;
-                padding: 16px;
-
-                if root.current-page == 0: BasicPage {
-                    is-blur: root.is-blur;
-                    is-bg-color: root.is-bg-color;
-                    is-solid-color: root.is-solid-color;
-                    accuracy: root.accuracy;
-                    is-detect-male: root.is-detect-male;
-                    is-detect-female: root.is-detect-female;
-                }
-
-                if root.current-page == 1: NetworkSizePage {
-                    network-width: root.network-width;
-                    network-height: root.network-height;
-                }
-
-                if root.current-page == 2: TimeoutPage {
-                    active-timeout: root.active-timeout;
-                    sleep-timeout: root.sleep-timeout;
-                    keep-running-seconds: root.keep-running-seconds;
-                }
-
-                if root.current-page == 3: AdditionalOptionsPage {
-                    auto-startup: root.auto-startup;
-                    is-priority-realtime: root.is-priority-realtime;
-                    toggle-key: root.toggle-key;
-                    screenshot-key: root.screenshot-key;
-                }
-
-                if root.current-page == 4: InExAppPage {
-                    is-all-windows: root.is-all-windows;
-                    is-include-window: root.is-include-window;
-                    is-exclude-window: root.is-exclude-window;
-                    include-windows: root.include-windows;
-                    exclude-windows: root.exclude-windows;
-                }
-
-                if root.current-page == 5: TrackingPage {}
-
-                if root.current-page == 6: ScalingPage {
-                    is-allow-max-cpu-limit: root.is-allow-max-cpu-limit;
-                    max-cpu-limit: root.max-cpu-limit;
-                }
-
-                if root.current-page == 7: AboutPage {}
-            }
-
-            Rectangle {
-                height: 80px;
-                background: Palette.alternate-background;
-                border-radius: 8px;
-                padding: 8px;
+                border-radius: 6px;
+                padding: 12px;
 
                 VerticalLayout {
-                    spacing: 6px;
+                    alignment: start; // Prevents vertical stretching of inner pages
 
-                    HorizontalLayout {
-                        spacing: 8px;
-                        alignment: center;
-
-                        Button {
-                            text: "Save";
-                            primary: true;
-                            clicked => { root.save(); }
-                        }
-                        Button {
-                            text: "Default";
-                            clicked => { root.restore-defaults(); }
-                        }
-                        Button {
-                            text: "OK";
-                            clicked => { root.ok_and_close(); }
-                        }
-                        Button {
-                            text: "Apply";
-                            clicked => { root.apply(); }
-                        }
+                    if root.current-page == 0: BasicPage {
+                        is-blur: root.is-blur;
+                        is-bg-color: root.is-bg-color;
+                        is-solid-color: root.is-solid-color;
+                        accuracy: root.accuracy;
+                        is-detect-male: root.is-detect-male;
+                        is-detect-female: root.is-detect-female;
                     }
 
-                    HorizontalLayout {
-                        spacing: 8px;
-                        alignment: center;
+                    if root.current-page == 1: NetworkSizePage {
+                        network-width: root.network-width;
+                        network-height: root.network-height;
+                    }
 
-                        Button {
-                            text: "Terminate";
-                            clicked => { root.terminate(); }
-                        }
-                        Button {
-                            text: root.is-active ? "Deactivate" : "Activate";
-                            clicked => { root.toggle-activation(); }
-                        }
-                        Button {
-                            text: "Screenshot";
-                            clicked => { root.take-screenshot(); }
-                        }
-                        Button {
-                            text: "Refresh Hotkeys";
-                            clicked => { root.refresh-hotkeys(); }
-                        }
+                    if root.current-page == 2: TimeoutPage {
+                        active-timeout: root.active-timeout;
+                        sleep-timeout: root.sleep-timeout;
+                        keep-running-seconds: root.keep-running-seconds;
+                    }
+
+                    if root.current-page == 3: AdditionalOptionsPage {
+                        auto-startup: root.auto-startup;
+                        is-priority-realtime: root.is-priority-realtime;
+                        toggle-key: root.toggle-key;
+                        screenshot-key: root.screenshot-key;
+                    }
+
+                    if root.current-page == 4: InExAppPage {
+                        is-all-windows: root.is-all-windows;
+                        is-include-window: root.is-include-window;
+                        is-exclude-window: root.is-exclude-window;
+                        include-windows: root.include-windows;
+                        exclude-windows: root.exclude-windows;
+                    }
+
+                    if root.current-page == 5: TrackingPage {}
+
+                    if root.current-page == 6: ScalingPage {
+                        is-allow-max-cpu-limit: root.is-allow-max-cpu-limit;
+                        max-cpu-limit: root.max-cpu-limit;
+                    }
+
+                    if root.current-page == 7: AboutPage {}
+                }
+            }
+
+            // Bottom Action Toolbar (Slimmed down to 1 row)
+            Rectangle {
+                height: 44px;
+                background: Palette.alternate-background;
+                border-radius: 6px;
+                padding-left: 10px;
+                padding-right: 10px;
+
+                HorizontalLayout {
+                    spacing: 6px;
+                    alignment: end;
+
+                    Button {
+                        text: root.is-active ? "Deactivate" : "Activate";
+                        clicked => { root.toggle-activation(); }
+                    }
+                    Button {
+                        text: "Screenshot";
+                        clicked => { root.take-screenshot(); }
+                    }
+                    Button {
+                        text: "Default";
+                        clicked => { root.restore-defaults(); }
+                    }
+                    Button {
+                        text: "Apply";
+                        clicked => { root.apply(); }
+                    }
+                    Button {
+                        text: "OK";
+                        primary: true;
+                        clicked => { root.ok_and_close(); }
                     }
                 }
             }

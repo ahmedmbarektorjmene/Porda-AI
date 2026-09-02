@@ -96,10 +96,10 @@ pub fn get_process_id() -> u32 {
 
 pub fn check_duplicate_instances() -> bool {
     let pid = std::process::id();
-    let our_name = std::env::current_exe()
-        .ok()
-        .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
-        .unwrap_or_default();
+    let our_exe = match std::env::current_exe() {
+        Ok(p) => p,
+        Err(_) => return false,
+    };
 
     if let Ok(entries) = std::fs::read_dir("/proc") {
         for entry in entries.flatten() {
@@ -107,9 +107,8 @@ pub fn check_duplicate_instances() -> bool {
             if let Some(pid_str) = name.to_str() {
                 if let Ok(proc_pid) = pid_str.parse::<u32>() {
                     if proc_pid != pid {
-                        let cmdline_path = entry.path().join("cmdline");
-                        if let Ok(cmdline) = std::fs::read_to_string(&cmdline_path) {
-                            if cmdline.contains(&our_name) {
+                        if let Ok(other_exe) = std::fs::read_link(entry.path().join("exe")) {
+                            if other_exe == our_exe {
                                 return true;
                             }
                         }

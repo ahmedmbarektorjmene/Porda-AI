@@ -68,12 +68,75 @@ fn run_linux_pipeline(
     running: Arc<Mutex<bool>>,
 ) {
     let (config_path, weights_path) = porda_platform::model_paths();
-    let detector: Box<dyn Detector> = if config_path.exists() && weights_path.exists() {
-        Box::new(OpenCvDetector::new(config_path, weights_path))
+    let detector: Box<dyn Detector> = if std::env::var("PORDA_MOCK_DETECTIONS").is_ok() {
+        tracing::info!("Pipeline: PORDA_MOCK_DETECTIONS set, using MockDetector for testing");
+        Box::new(MockDetector)
+    } else if config_path.exists() && weights_path.exists() {
+        let d = OpenCvDetector::new(config_path.clone(), weights_path.clone());
+        tracing::info!(
+            "Pipeline: model found, using {} (cfg={:?}, weights={:?})",
+            d.backend_name(),
+            config_path,
+            weights_path
+        );
+        Box::new(d)
     } else {
+        tracing::info!(
+            "Pipeline: model not found (cfg={:?} exists={}, weights={:?} exists={}), using mock",
+            config_path,
+            config_path.exists(),
+            weights_path,
+            weights_path.exists()
+        );
         Box::new(MockDetector)
     };
-    let mut overlay = CpuOverlayRenderer::new(porda_vision::geometry::ColorRgb::default());
+
+    let mut overlay: Box<dyn OverlayRenderer> = {
+        let outputs = porda_platform::linux::get_outputs();
+        let primary = outputs
+            .iter()
+            .find(|o| o.focused)
+            .or_else(|| outputs.first());
+        let (w, h) = primary
+            .map(|o| (o.geometry.width, o.geometry.height))
+            .unwrap_or((1920, 1200));
+        let (w, h) = if w == 1920 && h == 1080 {
+            (1920, 1200)
+        } else {
+            (w, h)
+        };
+        let cfg = porda_overlay::OverlayConfig {
+            width: w,
+            height: h,
+            scale: primary.map(|o| o.scale_factor).unwrap_or(1.0),
+            output_name: primary.map(|o| o.name.clone()),
+        };
+        let has_test = std::env::var("PORDA_OVERLAY_TEST_RECT").is_ok();
+        let wl: Box<dyn OverlayRenderer> = if has_test {
+            tracing::info!("Overlay: test rect mode enabled ({}x{} at center)", w, h);
+            Box::new(porda_overlay::WaylandOverlay::with_test_rect(cfg))
+        } else {
+            Box::new(porda_overlay::WaylandOverlay::new(
+                cfg,
+                porda_vision::geometry::ColorRgb::new(255, 0, 0),
+            ))
+        };
+        match wl.capability() {
+            porda_overlay::OverlayCapability::Supported => {
+                tracing::info!("Overlay: Wayland layer-shell supported, using overlay");
+                wl
+            }
+            porda_overlay::OverlayCapability::Unsupported(reason) => {
+                tracing::warn!(
+                    "Overlay: layer-shell unsupported ({}), falling back to CPU stub",
+                    reason
+                );
+                Box::new(CpuOverlayRenderer::new(
+                    porda_vision::geometry::ColorRgb::default(),
+                ))
+            }
+        }
+    };
 
     tracing::info!("Linux pipeline: initializing PipeWire portal capture");
 
@@ -88,11 +151,28 @@ fn run_linux_pipeline(
 
         let should_detect = {
             let s = state.lock().unwrap();
-            s.should_run_detection()
+            let base = s.should_run_detection();
+            let force_mock = std::env::var("PORDA_MOCK_DETECTIONS").is_ok();
+            let force_active = std::env::var("PORDA_FORCE_ACTIVE").is_ok();
+            let result = base || force_mock || force_active;
+            if result != base {
+                tracing::info!(
+                    "Pipeline: forcing active (base={}, force_mock={}, force_active={}, is_active={})",
+                    base,
+                    force_mock,
+                    force_active,
+                    s.is_active
+                );
+            }
+            result
         };
 
         if !should_detect {
-            let _ = porda_platform::linux_screen_capture();
+            let got_frame = porda_platform::linux_screen_capture().is_some();
+            tracing::trace!(
+                "Pipeline: inactive (is_active=false), frame_available={}",
+                got_frame
+            );
             std::thread::sleep(Duration::from_millis(200));
             continue;
         }
@@ -104,56 +184,117 @@ fn run_linux_pipeline(
 
         match porda_platform::linux_screen_capture() {
             Some((frame, desktop_rect)) => {
-                tracing::debug!(
-                    "Pipeline received frame: {}x{}, format={:?}",
+                tracing::info!(
+                    "Capture: frame {}x{} stride={} format={:?} rect={:?}",
                     frame.width,
                     frame.height,
-                    frame.format
+                    frame.stride,
+                    frame.format,
+                    desktop_rect
                 );
 
-                match detector.detect(
+                // Extract detector params with single lock to avoid dangling refs
+                let (conf_thresh, nms_thresh, target_classes, net_w, net_h) = {
+                    let s = state.lock().unwrap();
+                    (
+                        s.confidence_threshold(),
+                        s.config.detection.nms_threshold,
+                        s.target_classes(),
+                        s.config.detection.network_width,
+                        s.config.detection.network_height,
+                    )
+                };
+                tracing::info!(
+                    "Pipeline: calling detector backend={} conf_thresh={:.2} target_classes={:?}",
+                    detector.backend_name(),
+                    conf_thresh,
+                    target_classes
+                );
+
+                let detections = match detector.detect(
                     &frame,
-                    state.lock().unwrap().confidence_threshold(),
-                    state.lock().unwrap().config.detection.nms_threshold,
-                    &state.lock().unwrap().target_classes(),
-                    state.lock().unwrap().config.detection.network_width,
-                    state.lock().unwrap().config.detection.network_height,
+                    conf_thresh,
+                    nms_thresh,
+                    &target_classes,
+                    net_w,
+                    net_h,
                     &desktop_rect,
                 ) {
-                    Ok(detections) => {
-                        let has_detections = !detections.is_empty();
-
-                        {
-                            let mut s = state.lock().unwrap();
-                            s.last_detections = detections.clone();
-                            s.update_detection_state(has_detections);
-                        }
-
-                        {
-                            let covers = covers_for_detections(
-                                &detections,
-                                &frame,
-                                state.lock().unwrap().cover_mode(),
-                                state.lock().unwrap().solid_color(),
-                                &state.lock().unwrap().window_rects,
-                            );
-
-                            let _ = overlay.update_covers(&covers, &frame);
-
-                            {
-                                let mut s = state.lock().unwrap();
-                                s.covers = covers.clone();
-                            }
-
-                            let _ = event_tx.send(CoreEvent::CoversUpdated(covers));
-                        }
-                    }
+                    Ok(d) => d,
                     Err(e) => {
-                        tracing::error!("Detection failed: {}", e);
+                        tracing::error!("Detector error: {}", e);
+                        std::thread::sleep(Duration::from_millis(interval_ms));
+                        continue;
                     }
+                };
+
+                tracing::info!("Detector: {} detections", detections.len());
+                for (i, det) in detections.iter().enumerate() {
+                    tracing::info!(
+                        "Detection[{}]: class={:?} conf={:.2} bbox=({},{},{},{})",
+                        i,
+                        det.class,
+                        det.confidence,
+                        det.screen_rect.x,
+                        det.screen_rect.y,
+                        det.screen_rect.width,
+                        det.screen_rect.height
+                    );
                 }
+
+                let covers = {
+                    let s = state.lock().unwrap();
+                    covers_for_detections(
+                        &detections,
+                        &frame,
+                        s.cover_mode(),
+                        s.solid_color(),
+                        &s.window_rects,
+                    )
+                };
+
+                tracing::info!(
+                    "covers_for_detections: input={} -> output={} covers",
+                    detections.len(),
+                    covers.len()
+                );
+                for (i, cover) in covers.iter().enumerate() {
+                    tracing::info!(
+                        "CoverRect[{}]: x={} y={} w={} h={} mode={:?}",
+                        i,
+                        cover.screen_rect.x,
+                        cover.screen_rect.y,
+                        cover.screen_rect.width,
+                        cover.screen_rect.height,
+                        cover.mode
+                    );
+                }
+
+                {
+                    let has_detections = !detections.is_empty();
+                    let mut s = state.lock().unwrap();
+                    s.last_detections = detections.clone();
+                    s.update_detection_state(has_detections);
+                    tracing::info!("Pipeline: detection_state={:?}", s.detection_state);
+                }
+
+                tracing::info!("Overlay: sending UpdateCovers count={}", covers.len());
+                let overlay_result = overlay.update_covers(&covers, &frame);
+                match &overlay_result {
+                    Ok(_) => tracing::info!("Overlay: UpdateCovers sent successfully"),
+                    Err(e) => tracing::error!("Overlay: UpdateCovers failed: {}", e),
+                }
+                let _ = overlay_result;
+
+                {
+                    let mut s = state.lock().unwrap();
+                    s.covers = covers.clone();
+                }
+                let _ = event_tx.send(CoreEvent::CoversUpdated(covers));
             }
-            None => {}
+            None => {
+                tracing::trace!("Capture: no frame available");
+            }
         }
 
         std::thread::sleep(Duration::from_millis(interval_ms));
