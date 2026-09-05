@@ -1,3 +1,4 @@
+#![allow(clippy::derivable_impls)]
 pub mod defaults;
 pub mod settings;
 

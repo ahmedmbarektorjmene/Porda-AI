@@ -47,16 +47,11 @@ pub struct CoverRect {
     pub mode: CoverMode,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DetectionState {
     Active,
+    #[default]
     Sleep,
-}
-
-impl Default for DetectionState {
-    fn default() -> Self {
-        Self::Sleep
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -205,9 +200,9 @@ pub fn extract_dominant_color(
 
     let mut best_idx = 0;
     let mut best_count = 0;
-    for i in 0..histogram.len() {
-        if histogram[i][0] > best_count {
-            best_count = histogram[i][0];
+    for (i, entry) in histogram.iter().enumerate() {
+        if entry[0] > best_count {
+            best_count = entry[0];
             best_idx = i;
         }
     }

@@ -17,7 +17,7 @@ component SettingsSidebar inherits VerticalLayout {
     SidebarButton { label: "In/Ex App"; active: current-page == 4; clicked => { root.navigate(4); } }
     SidebarButton { label: "Tracking"; active: current-page == 5; clicked => { root.navigate(5); } }
     SidebarButton { label: "Scaling"; active: current-page == 6; clicked => { root.navigate(6); } }
-    SidebarButton { label: "About/Report"; active: current-page == 7; clicked => { root.navigate(7); } }
+    SidebarButton { label: "About"; active: current-page == 7; clicked => { root.navigate(7); } }
 }
 
 export component AppWindow inherits Window {

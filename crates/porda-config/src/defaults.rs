@@ -1,6 +1,7 @@
 use crate::settings::*;
 use porda_vision::geometry::ColorRgb;
 
+#[allow(clippy::derivable_impls)]
 impl Default for PordaConfig {
     fn default() -> Self {
         Self {

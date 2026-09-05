@@ -119,6 +119,7 @@ pub fn nms(boxes: &mut Vec<ScreenRect>, scores: &mut Vec<f32>, threshold: f32) {
     scores.truncate(write_idx);
 }
 
+#[allow(clippy::manual_checked_ops)]
 pub fn blur_region(data: &[u8], width: u32, height: u32) -> Vec<u8> {
     if data.is_empty() || width == 0 || height == 0 {
         return vec![];

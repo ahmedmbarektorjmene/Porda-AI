@@ -1,3 +1,4 @@
+#![allow(clippy::large_enum_variant)]
 pub mod app_state;
 pub mod commands;
 pub mod pipeline;

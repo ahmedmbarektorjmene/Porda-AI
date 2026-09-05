@@ -308,7 +308,39 @@ pub fn ensure_app_directories() -> std::io::Result<()> {
     porda_config::defaults::ensure_directories()
 }
 
+pub fn onnx_model_path() -> PathBuf {
+    let external = porda_config::defaults::external_model_dir().join("porda.onnx");
+    if external.exists() {
+        return external;
+    }
+    // Workspace model dir
+    let ws = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../model/porda.onnx");
+    if ws.exists() {
+        return ws;
+    }
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+        .unwrap_or_else(|| PathBuf::from("."));
+    let exe_model = exe_dir.join("model").join("porda.onnx");
+    if exe_model.exists() {
+        return exe_model;
+    }
+    // Dev fallback adjacent to crate
+    let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../model/porda.onnx");
+    dev
+}
+
 pub fn model_paths() -> (PathBuf, PathBuf) {
+    // Prefer ONNX path's directory for legacy cfg/weights if ONNX exists, else legacy
+    let onnx = onnx_model_path();
+    if onnx.exists() {
+        let dir = onnx.parent().unwrap_or(std::path::Path::new("."));
+        return (
+            dir.join("pordav4x3.cfg"),
+            dir.join("porda-19200-lr-0005-909.weights"),
+        );
+    }
     let external = porda_config::defaults::external_model_dir();
     let cfg_files: Vec<_> = std::fs::read_dir(&external)
         .into_iter()

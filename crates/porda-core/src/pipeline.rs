@@ -67,26 +67,47 @@ fn run_linux_pipeline(
     event_tx: std::sync::mpsc::Sender<CoreEvent>,
     running: Arc<Mutex<bool>>,
 ) {
-    let (config_path, weights_path) = porda_platform::model_paths();
+    let onnx_path = porda_platform::onnx_model_path();
+    let (cfg_path, w_path) = porda_platform::model_paths();
     let detector: Box<dyn Detector> = if std::env::var("PORDA_MOCK_DETECTIONS").is_ok() {
         tracing::info!("Pipeline: PORDA_MOCK_DETECTIONS set, using MockDetector for testing");
         Box::new(MockDetector)
-    } else if config_path.exists() && weights_path.exists() {
-        let d = OpenCvDetector::new(config_path.clone(), weights_path.clone());
+    } else if onnx_path.exists() {
+        let device = std::env::var("PORDA_INFERENCE_DEVICE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(porda_inference::detector::InferenceDevice::Auto);
+        let d = OpenCvDetector::new(onnx_path.clone(), device);
         tracing::info!(
-            "Pipeline: model found, using {} (cfg={:?}, weights={:?})",
+            "Pipeline: ONNX model found, using {} (onnx={:?} device={:?})",
             d.backend_name(),
-            config_path,
-            weights_path
+            onnx_path,
+            device
+        );
+        Box::new(d)
+    } else if cfg_path.exists() && w_path.exists() {
+        tracing::warn!(
+            "Pipeline: ONNX not found at {:?}, falling back to legacy Darknet cfg/weights {:?}/{:?} (deprecated)",
+            onnx_path, cfg_path, w_path
+        );
+        let onnx_fallback = cfg_path
+            .parent()
+            .unwrap_or(std::path::Path::new("."))
+            .join("porda.onnx");
+        let d = OpenCvDetector::new(
+            onnx_fallback,
+            porda_inference::detector::InferenceDevice::Auto,
         );
         Box::new(d)
     } else {
         tracing::info!(
-            "Pipeline: model not found (cfg={:?} exists={}, weights={:?} exists={}), using mock",
-            config_path,
-            config_path.exists(),
-            weights_path,
-            weights_path.exists()
+            "Pipeline: model not found (onnx={:?} exists={}, cfg={:?} exists={}, weights={:?} exists={}), using mock",
+            onnx_path,
+            onnx_path.exists(),
+            cfg_path,
+            cfg_path.exists(),
+            w_path,
+            w_path.exists()
         );
         Box::new(MockDetector)
     };
@@ -310,11 +331,20 @@ fn run_windows_pipeline(
     running: Arc<Mutex<bool>>,
 ) {
     let capturer = PlatformCapturer::new();
-    let (config_path, weights_path) = porda_platform::model_paths();
-    let detector: Box<dyn Detector> = if config_path.exists() && weights_path.exists() {
-        Box::new(OpenCvDetector::new(config_path, weights_path))
+    let onnx_path = porda_platform::onnx_model_path();
+    let detector: Box<dyn Detector> = if onnx_path.exists() {
+        let device = std::env::var("PORDA_INFERENCE_DEVICE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(porda_inference::detector::InferenceDevice::Auto);
+        Box::new(OpenCvDetector::new(onnx_path, device))
     } else {
-        Box::new(MockDetector)
+        let (cfg_path, w_path) = porda_platform::model_paths();
+        if cfg_path.exists() && w_path.exists() {
+            Box::new(OpenCvDetector::new_legacy_darknet(cfg_path, w_path))
+        } else {
+            Box::new(MockDetector)
+        }
     };
     let mut overlay = CpuOverlayRenderer::new(porda_vision::geometry::ColorRgb::default());
 
